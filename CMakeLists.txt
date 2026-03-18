@@ -22,7 +22,7 @@ set(HEADERS
 
 add_library(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 
-target_include_directories(SocketLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(SocketLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_features(SocketLib PUBLIC cxx_std_17)
 
 if (WIN32)
