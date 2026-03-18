@@ -1,0 +1,2 @@
+/usr/bin/ar qc libSocketLib.a CMakeFiles/SocketLib.dir/src/SocketLib_internal.cpp.o CMakeFiles/SocketLib.dir/src/tcp_server.cpp.o CMakeFiles/SocketLib.dir/src/tcp_client.cpp.o CMakeFiles/SocketLib.dir/src/udp_server.cpp.o CMakeFiles/SocketLib.dir/src/udp_client.cpp.o CMakeFiles/SocketLib.dir/src/SocketLib.cpp.o CMakeFiles/SocketLib.dir/src/SocketLib_tests.cpp.o
+/usr/bin/ranlib libSocketLib.a

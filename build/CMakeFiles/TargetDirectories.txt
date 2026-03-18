@@ -1,0 +1,3 @@
+/home/centerbla/Desktop/MyPersonal/SocketLib/build/CMakeFiles/SocketLib.dir
+/home/centerbla/Desktop/MyPersonal/SocketLib/build/CMakeFiles/edit_cache.dir
+/home/centerbla/Desktop/MyPersonal/SocketLib/build/CMakeFiles/rebuild_cache.dir
