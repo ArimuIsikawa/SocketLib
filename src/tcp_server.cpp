@@ -164,7 +164,8 @@ void tcp_server::handle_client(std::intptr_t client_socket) {
             break;
         }
 
-        std::cout << "[tcp_server] received: " << message << std::endl;
+        if (message_handler != nullptr)
+            message_handler(message);
     }
 
     {

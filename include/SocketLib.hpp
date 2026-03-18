@@ -18,6 +18,7 @@ public:
     void stop();
     bool is_running() const;
 
+    void (*message_handler)(std::string message) = nullptr;
 private:
     void accept_loop();
     void handle_client(std::intptr_t client_socket);
