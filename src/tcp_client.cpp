@@ -1,7 +1,30 @@
 #include "SocketLib.hpp"
 #include "SocketLib_internal.hpp"
 
+#include <cstdint>
+#include <limits>
+
 namespace SocketLib {
+
+namespace {
+
+bool send_exact(detail::native_socket_t sock, const char* data, std::size_t size) {
+    std::size_t total = 0;
+    while (total < size) {
+#ifdef _WIN32
+        const int sent = ::send(sock, data + total, static_cast<int>(size - total), 0);
+#else
+        const int sent = static_cast<int>(::send(sock, data + total, size - total, 0));
+#endif
+        if (sent <= 0) {
+            return false;
+        }
+        total += static_cast<std::size_t>(sent);
+    }
+    return true;
+}
+
+}  // namespace
 
 tcp_client::tcp_client(const std::string& host, std::uint16_t port)
     : socket_(detail::from_native(detail::kInvalidSocket)), connected_(false) {
@@ -42,24 +65,19 @@ bool tcp_client::sendall(const std::string& data) {
         return false;
     }
 
-    const char* ptr = data.data();
-    std::size_t left = data.size();
-
-    while (left > 0) {
-#ifdef _WIN32
-        const int sent = ::send(detail::to_native(socket_), ptr, static_cast<int>(left), 0);
-#else
-        const int sent = static_cast<int>(::send(detail::to_native(socket_), ptr, left, 0));
-#endif
-        if (sent <= 0) {
-            return false;
-        }
-
-        ptr += sent;
-        left -= static_cast<std::size_t>(sent);
+    if (data.size() > static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max())) {
+        return false;
     }
 
-    return true;
+    const auto payload_len = static_cast<std::uint32_t>(data.size());
+    const std::uint32_t payload_len_net = htonl(payload_len);
+    detail::native_socket_t sock = detail::to_native(socket_);
+
+    if (!send_exact(sock, reinterpret_cast<const char*>(&payload_len_net), sizeof(payload_len_net))) {
+        return false;
+    }
+
+    return payload_len == 0 || send_exact(sock, data.data(), data.size());
 }
 
 void tcp_client::close() {

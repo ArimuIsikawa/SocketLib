@@ -2,9 +2,31 @@
 #include "SocketLib_internal.hpp"
 
 #include <algorithm>
+#include <cstdint>
 #include <iostream>
+#include <limits>
 
 namespace SocketLib {
+
+namespace {
+
+bool recv_exact(detail::native_socket_t sock, char* buffer, std::size_t size) {
+    std::size_t total = 0;
+    while (total < size) {
+#ifdef _WIN32
+        const int received = ::recv(sock, buffer + total, static_cast<int>(size - total), 0);
+#else
+        const int received = static_cast<int>(::recv(sock, buffer + total, size - total, 0));
+#endif
+        if (received <= 0) {
+            return false;
+        }
+        total += static_cast<std::size_t>(received);
+    }
+    return true;
+}
+
+}  // namespace
 
 tcp_server::tcp_server(std::uint16_t port)
     : port_(port), running_(false), listen_socket_(detail::from_native(detail::kInvalidSocket)) {}
@@ -124,20 +146,24 @@ void tcp_server::accept_loop() {
 
 void tcp_server::handle_client(std::intptr_t client_socket) {
     detail::native_socket_t client = detail::to_native(client_socket);
-    char buffer[1024];
 
     while (running_) {
-#ifdef _WIN32
-        const int received = recv(client, buffer, static_cast<int>(sizeof(buffer)), 0);
-#else
-        const int received = static_cast<int>(recv(client, buffer, sizeof(buffer), 0));
-#endif
-
-        if (received <= 0) {
+        std::uint32_t payload_len_net = 0;
+        if (!recv_exact(client, reinterpret_cast<char*>(&payload_len_net), sizeof(payload_len_net))) {
             break;
         }
 
-        std::string message(buffer, buffer + received);
+        const std::uint32_t payload_len = ntohl(payload_len_net);
+        if (payload_len > static_cast<std::uint32_t>(std::numeric_limits<int>::max())) {
+            break;
+        }
+
+        std::string message(payload_len, '\0');
+        if (payload_len > 0 &&
+            !recv_exact(client, message.data(), static_cast<std::size_t>(payload_len))) {
+            break;
+        }
+
         std::cout << "[tcp_server] received: " << message << std::endl;
     }
 
